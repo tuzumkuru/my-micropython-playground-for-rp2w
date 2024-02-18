@@ -59,6 +59,8 @@ async def main():
     print("Starting program.")
 
     wifi = utilities.connect_wifi(config.WIFI_SSID,config.WIFI_PASSWORD)
+
+    utilities.sync_time()
     
     print(f"Connecting to the mqtt broker {MQTT_BROKER}")
     mqtt_client = MQTTClient(CLIENT_ID, MQTT_BROKER, user=MQTT_USER, password=MQTT_PASSWORD)

@@ -1,40 +1,75 @@
-# Import necessary libraries
-from collections import deque
-import numpy as np
+import math
+import time
+from machine import I2C
+from machine import Pin
+from bme688 import *
 
-# Set the window size
-window_size = 50
 
-# Initialize your data windows
-temperature_data = deque(maxlen=window_size)
-pressure_data = deque(maxlen=window_size)
-humidity_data = deque(maxlen=window_size)
-gas_data = deque(maxlen=window_size)
+class RunningStats:
+    def __init__(self):
+        self.n = 0
+        self.mean = 0.0
+        self.M2 = 0.0
+
+    def update(self, x):
+        self.n += 1
+        delta = x - self.mean
+        self.mean += delta / self.n
+        delta2 = x - self.mean
+        self.M2 += delta * delta2
+
+    def variance(self):
+        if self.n < 2:
+            return float('nan')
+        return self.M2 / (self.n - 1)
+
+    def standard_deviation(self):
+        return math.sqrt(self.variance())
+
+# Function to generate random sensor data
+def get_sensor_data():
+    # Simulate getting sensor data (replace this with actual sensor data retrieval)
+    return bme.temperature  # Generate a random data point between 0 and 100
+
+# Define threshold for significant change (e.g., two standard deviations)
+threshold_multiplier = 2
+
+# Initialize running statistics
+stats = RunningStats()
+
+i2c = I2C(0, sda=Pin(4), scl=Pin(5))
+
+bme = BME680_I2C(i2c)
+
+previous_sensor_value = 0
 
 while True:
-    current_time = time.time()
+    # Example sensor data retrieval (replace with actual data retrieval)
+    sensor_value = get_sensor_data()
 
-    bme_data = await get_sensor_data(bme)
+    print(f"Got sensor data: {sensor_value}")
 
-    # Store your data
-    temperature_data.append(bme_data['temperature'])
-    pressure_data.append(bme_data['pressure'])
-    humidity_data.append(bme_data['humidity'])
-    gas_data.append(bme_data['gas'])
+    # Update running statistics
+    stats.update(sensor_value)
 
-    derivative, jerk = await calculator.calculate_derivative_and_jerk(bme_data)
+    # Calculate standard deviation
+    std_dev = stats.standard_deviation()
 
-    if len(temperature_data) == window_size:  # Check if window is filled
-        # Calculate statistics
-        temp_std = np.std(temperature_data)
-        pressure_std = np.std(pressure_data)
-        humidity_std = np.std(humidity_data)
-        gas_std = np.std(gas_data)
+    print(f"std_dev: {std_dev}")
 
-        # Print or use them in your logic
-        print('Temperature Standard Deviation:', temp_std)
-        print('Pressure Standard Deviation:', pressure_std)
-        print('Humidity Standard Deviation:', humidity_std)
-        print('Gas Standard Deviation:', gas_std)
+    # Calculate threshold
+    threshold = threshold_multiplier * std_dev
 
-        # Set your thresholds based on these statistics and use them in your logic.
+    # Function to check for significant change
+    def is_significant_change(current_value, previous_value, threshold):
+        return abs(current_value - previous_value) > threshold
+
+    # Check for significant change
+    if stats.n > 1 and is_significant_change(sensor_value, previous_sensor_value, threshold):
+        print("Significant change detected:", sensor_value)
+        # Send data or take appropriate action
+
+    previous_sensor_value = sensor_value
+
+    # Wait for 1 second before getting next sensor data
+    time.sleep(1)

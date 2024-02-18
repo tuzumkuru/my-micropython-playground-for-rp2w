@@ -39,3 +39,14 @@ class DerivativeAndJerkCalculator:
         self.previous_data = {'data': current_data, 'derivative': derivative}
 
         return derivative, jerk
+    
+def sync_time():
+    import ntptime
+    if network.WLAN(network.STA_IF).isconnected():
+        try:
+            ntptime.settime()
+            return True
+        except:
+            return False
+    return False
+

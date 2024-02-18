@@ -22,7 +22,7 @@ gas = bme.gas
 async def task_peripheral():
   if(not wlan.isconnected()): # check if the station is connected to an AP
     print(f"Trying to connect.")
-    wlan.connect(config.ssid, config.password) # connect to an AP
+    wlan.connect(config.WIFI_SSID, config.WIFI_PASSWORD) # connect to an AP
 
   while(wlan.isconnected()):
     print("Temperature: {:.2f} °C".format(temperature))
