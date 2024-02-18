@@ -24,25 +24,6 @@ MQTT_PASSWORD = config.MQTT_PASSWORD
 def calculate_average(data):
     return sum(data) / len(data)
 
-# Function to send data to MQTT broker
-def send_data_to_mqtt(client, avg_temperature, avg_pressure, avg_humidity, avg_gas):
-    client.connect()
-    client.publish("sensor_data", f"Temperature: {avg_temperature}, Pressure: {avg_pressure}, Humidity: {avg_humidity}, Gas: {avg_gas}")
-    client.disconnect()
-    print("Data sent to MQTT broker")  # Add print statement to indicate data sent
-
-# Define function to read sensor data
-async def read_sensor_data(bme, period):
-    data = []
-    for _ in range(period):  # Read data for specified period
-        temperature = bme.temperature
-        pressure = bme.pressure
-        humidity = bme.humidity
-        gas = bme.gas
-        data.append((temperature, pressure, humidity, gas))
-        await asyncio.sleep(1)
-    return data
-
 async def get_sensor_data(bme):
     return {
     "temperature": bme.temperature,
@@ -57,18 +38,20 @@ def calculate_period(data, derivative, jerk, derivative_threshold, jerk_threshol
     normal_period = 60
 
     if(derivative is None or jerk is None):
-        return immediate_period
+        return immediate_period, 0, 0
 
 
     derivative_magnitude = math.sqrt(sum(value ** 2 for value in derivative.values()))
     jerk_magnitude = math.sqrt(sum(value ** 2 for value in jerk.values()))
 
-    print(derivative_magnitude, jerk_magnitude)
+    # print(derivative_magnitude, jerk_magnitude)
 
     if derivative_magnitude > derivative_threshold or jerk_magnitude > jerk_threshold:
-        return high_dramaticity_period
+        return immediate_period, derivative_magnitude, jerk_magnitude
+    elif derivative_magnitude > derivative_threshold and jerk_magnitude > jerk_threshold:
+        return high_dramaticity_period, derivative_magnitude, jerk_magnitude
     else:
-        return normal_period
+        return normal_period, derivative_magnitude, jerk_magnitude
 
 
 # Main function to run the asyncio event loop
@@ -91,6 +74,7 @@ async def main():
         # Time settings
     start_time = time.time()
     previous_time = start_time
+    period = 0
 
     print(f"Starting loop at {start_time}")
     while True:
@@ -98,14 +82,30 @@ async def main():
 
         bme_data = await get_sensor_data(bme)
         derivative, jerk = await calculator.calculate_derivative_and_jerk(bme_data)
-        print (bme_data, derivative, jerk)
+        print (bme_data)
 
-        if current_time-previous_time >= calculate_period(bme_data, derivative, jerk, 10, 10): 
-            print(f"{current_time-previous_time} seconds passed. Sending data!")
-            mqtt_client.publish(MQTT_TOPIC, json.dumps(bme_data))
+        
+        # Assuming bme_data is obtained from get_sensor_data(bme)
+        
+        # Filter out 'gas' key from bme_data
+        bme_data_filtered = {key: value for key, value in bme_data.items() if key != 'gas'}
+        if derivative is not None and jerk is not None:
+            derivative_filtered = {key: value for key, value in derivative.items() if key != 'gas'}
+            jerk_filtered = {key: value for key, value in jerk.items() if key != 'gas'}
+            period, derivative_magnitude, jerk_magnitude = calculate_period(bme_data_filtered, derivative_filtered, jerk_filtered, 0.1, 0.05)
             mqtt_client.publish("derivative", json.dumps(derivative))
             mqtt_client.publish("jerk", json.dumps(jerk))
+            mqtt_client.publish("derivative_magnitude", json.dumps(derivative_magnitude))
+            mqtt_client.publish("jerk_magnitude", json.dumps(jerk_magnitude))
+        
+        # Call calculate_period with the filtered bme_data
+        
+        if current_time-previous_time >= period: 
+            print(f"{current_time-previous_time} seconds passed. Sending data!")
+            mqtt_client.publish(MQTT_TOPIC, json.dumps(bme_data))
             previous_time = current_time
+
+
 
         await asyncio.sleep(1)
 
