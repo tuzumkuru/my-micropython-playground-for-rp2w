@@ -1,18 +1,18 @@
 import network
 import time
+from logger import log
 
 def connect_wifi(ssid, password):
-    print(f"Connecting to {ssid}")
+    log(f"Connecting to {ssid}")
     wlan = network.WLAN(network.STA_IF) # create station interface
     wlan.active(True)       # activate the interface
     wlan.scan()
     if not wlan.isconnected(): # check if the station is connected to an AP
         wlan.connect(ssid, password) # connect to an AP
         while not wlan.isconnected():
-            print(f"Waiting for connection to {ssid}")
-            time.sleep(0.1)
-            pass
-    print('Wi-Fi connected:', wlan.ifconfig())
+            log(f"Waiting for connection to {ssid}")
+            time.sleep(1)
+    log(f"Wi-Fi connected: {wlan.ifconfig()}")
     return wlan
 
 
@@ -49,4 +49,3 @@ def sync_time():
         except:
             return False
     return False
-
