@@ -46,6 +46,7 @@ def sync_time():
         try:
             ntptime.settime()
             return True
-        except:
+        except Exception as e:
+            log(f"Error in sync_time: {e}")
             return False
     return False
