@@ -3,14 +3,13 @@ import uasyncio as asyncio
 import ubinascii
 import machine
 from machine import Pin, I2C
-from umqtt.simple import MQTTClient
+from umqtt.robust import MQTTClient
 from bme688 import *
 import config
-from utilities import connect_wifi, sync_time
-import math
+from utilities import sync_time
+import wifi
 import json
 from logger import log
-
 
 
 # Default MQTT server to connect to
@@ -21,16 +20,16 @@ MQTT_USER = config.MQTT_USER
 MQTT_PASSWORD = config.MQTT_PASSWORD
 
 DATA_SEND_PERIOD = 60
-wifi_connection = False
 
+wlan = wifi.WiFi()
 
 async def task_flash_led():
     led = Pin('LED', Pin.OUT)
-    BLINK_DELAY_MS_FAST = const(200)
-    BLINK_DELAY_MS_SLOW = const(500)
+    BLINK_DELAY_MS_FAST = const(500)
+    BLINK_DELAY_MS_SLOW = const(1000)
     while True:
         led.toggle()
-        if wifi_connection:
+        if wlan.is_connected():
             await asyncio.sleep_ms(BLINK_DELAY_MS_SLOW)
         else:
             await asyncio.sleep_ms(BLINK_DELAY_MS_FAST)
@@ -63,12 +62,22 @@ async def task_main():
     while True:
         current_time = time.time()
         
-        if current_time-previous_time >= DATA_SEND_PERIOD: 
-            bme_data = await get_sensor_data(bme)        
-            bme_data["timestamp"] = time.time()
-            log(f"{current_time-previous_time} seconds passed. Sending data!")
-            mqtt_client.publish(MQTT_TOPIC, json.dumps(bme_data))
-            previous_time = current_time
+        if current_time - previous_time >= DATA_SEND_PERIOD: 
+            try:
+                bme_data = await get_sensor_data(bme)        
+                bme_data["timestamp"] = time.time()
+                log(f"{current_time - previous_time} seconds passed. Sending data!")
+                mqtt_client.publish(MQTT_TOPIC, json.dumps(bme_data))
+                previous_time = current_time
+            except OSError as e:
+                # Handle connection error
+                log(f"Error occurred while sending data: {e}", file_path="log.log")
+                if not wlan.is_connected:
+                    log("No internet connection.")
+                    wifi = await wlan.connect_async(config.WIFI_SSID,config.WIFI_PASSWORD)    
+                mqtt_client.reconnect()
+            except Exception as e:
+                log(f"Other error occurred while sending data: {e}", file_path="log.log")
 
         await asyncio.sleep(1)
 
@@ -80,15 +89,13 @@ async def main():
     tasks = []
     tasks.append(asyncio.create_task(task_flash_led()))
 
-    wifi = connect_wifi(config.WIFI_SSID,config.WIFI_PASSWORD)
-
-    wifi_connection = wifi.isconnected()
+    await wlan.connect_async(config.WIFI_SSID,config.WIFI_PASSWORD)
 
     sync_time()
     
     tasks.append(asyncio.create_task(task_main()))
 
-    await asyncio.gather(*tasks)
+    await asyncio.gather(*tasks)    
 
 
 if __name__ == "__main__":
