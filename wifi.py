@@ -6,41 +6,54 @@ from logger import log
 class WiFi:
     def __init__(self):
         self.wlan = network.WLAN(network.STA_IF)
-        
 
     def connect(self, ssid, password):
         log(f"Connecting to {ssid}")
-        self.wlan.active(True)       # activate the interface
-        if not self.is_connected(): # check if the station is connected to an AP
-            self.wlan.connect(ssid, password) # connect to an AP
-            while not self.is_connected():
-                log(f"Waiting for connection to {ssid}")
-                time.sleep(1)
-        log(f"Wi-Fi connected: {self.wlan.ifconfig()}")
-        return self.wlan
+        self.wlan.active(True)  # Activate the interface
+        try:
+            if not self.is_connected():
+                self.wlan.connect(ssid, password)
+                while not self.is_connected():
+                    log(f"Waiting for connection to {ssid}")
+                    time.sleep(1)
+            log(f"Wi-Fi connected: {self.wlan.ifconfig()}")
+        except Exception as e:
+            log(f"Error occurred while connecting: {e}")
 
     async def connect_async(self, ssid, password):
         log(f"Connecting to {ssid}")
-        self.wlan.active(True)       # activate the interface
+        self.wlan.active(True)  # Activate the interface
         await asyncio.sleep(1)
-        if not self.is_connected(): # check if the station is connected to an AP
-            self.wlan.connect(ssid, password) # connect to an AP
-            while not self.wlan.isconnected():
-                log(f"Waiting for connection to {ssid}")
-                log(f"State is {self.wlan.status()}")
-                await asyncio.sleep(1)
-        log(f"Wi-Fi connected: {self.wlan.ifconfig()}")
-        return self.wlan
+        try:
+            if not self.is_connected():
+                self.wlan.connect(ssid, password)
+                while not self.wlan.isconnected():
+                    log(f"Waiting for connection to {ssid}")
+                    log(f"State is {self.wlan.status()}")
+                    await asyncio.sleep(1)
+            log(f"Wi-Fi connected: {self.wlan.ifconfig()}")
+        except Exception as e:
+            log(f"Error occurred while connecting asynchronously: {e}")
 
     def is_connected(self):
         return self.wlan.isconnected()
 
     def disconnect(self):
-        self.wlan.disconnect()
+        try:
+            self.wlan.disconnect()
+        except Exception as e:
+            log(f"Error occurred while disconnecting: {e}")
 
     def scan(self):
-        return self.wlan.scan()
-        
+        try:
+            return self.wlan.scan()
+        except Exception as e:
+            log(f"Error occurred while scanning: {e}")
+            return []
 
     def get_ip(self):
-        return self.wlan.ifconfig()[0]
+        try:
+            return self.wlan.ifconfig()[0]
+        except Exception as e:
+            log(f"Error occurred while getting IP address: {e}")
+            return None
