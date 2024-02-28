@@ -11,11 +11,8 @@ import wifi
 import json
 from logger import log
 
-# Default MQTT server to connect to
-MQTT_BROKER = config.MQTT_BROKER
 CLIENT_ID = ubinascii.hexlify(machine.unique_id()).decode('utf-8')
 MQTT_TOPIC = CLIENT_ID + '/' + "BME688"
-
 
 def get_mqtt_config():
     from mqtt_as import config as MQTT_ARGS
@@ -66,11 +63,14 @@ async def task_main():
     i2c = I2C(0, sda=Pin(4), scl=Pin(5))
     bme = BME680_I2C(i2c)
     
-    log(f"Connecting to the mqtt broker {MQTT_BROKER}")
+    MQTT_CONFIG = get_mqtt_config()
+
+    log(f"Connecting to the mqtt broker {MQTT_CONFIG['server']}")
     MQTTClient.DEBUG = True  # Optional: print diagnostic messages
-    mqtt_client = MQTTClient(get_mqtt_config())
+    mqtt_client = MQTTClient(MQTT_CONFIG)
 
     await mqtt_client.connect()
+
 
     # Time settings
     start_time = time.time()
@@ -87,17 +87,17 @@ async def task_main():
                 bme_data = await get_sensor_data(bme)        
                 bme_data["timestamp"] = time.time()
                 log(f"{current_time - previous_time} seconds passed. Sending data to {MQTT_TOPIC}!")
-                mqtt_client.publish(MQTT_TOPIC, json.dumps(bme_data))
+                await mqtt_client.publish(MQTT_TOPIC, json.dumps(bme_data))
                 log(f"Data sent!")
                 previous_time = current_time
             except Exception as e:
+                # Handle connection error
                 log(f"Error occurred while sending data: {e}", file_path="log.log")
                 if not wlan.is_connected:
-                    log("No internet connection. Trying to connect again!")
+                    log("No internet connection.")
                     wifi = await wlan.connect_async(config.WIFI_SSID,config.WIFI_PASSWORD)
                 log(f"Reconnecting to mqtt_client!", file_path="log.log")
                 mqtt_client.connect(False)
-
         await asyncio.sleep(1)
 
     mqtt_client.disconnect()
@@ -120,12 +120,3 @@ async def main():
 
 if __name__ == "__main__":
   asyncio.run(main())
-
-
-
-
-
-
-
-
-
