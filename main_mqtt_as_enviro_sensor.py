@@ -34,7 +34,7 @@ def get_mqtt_config():
 
     return MQTT_ARGS
 
-DATA_SEND_PERIOD = 5
+DATA_SEND_PERIOD = 60
 
 wlan = wifi.WiFi()
 
