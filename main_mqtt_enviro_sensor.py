@@ -85,7 +85,7 @@ async def task_main():
             try:
                 bme_data = await get_sensor_data(bme)        
                 bme_data["timestamp"] = time.time()
-                log(f"{current_time - previous_time} seconds passed. Sending data to {MQTT_TOPIC}!")
+                log(f"{current_time - previous_time} seconds passed. Sending data to {MQTT_TOPIC}")
                 mqtt_client.publish(MQTT_TOPIC, json.dumps(bme_data))
                 log(f"Data sent!")
                 previous_time = current_time
