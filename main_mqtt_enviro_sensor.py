@@ -17,6 +17,7 @@ MQTT_BROKER = config.MQTT_BROKER
 CLIENT_ID = ubinascii.hexlify(machine.unique_id()).decode('utf-8')
 MQTT_TOPIC = CLIENT_ID + '/' + "BME688"
 
+LOG_FILE_PATH = "log.log"
 
 def get_mqtt_broker_parameters():
     MQTT_ARGS = {
@@ -90,14 +91,17 @@ async def task_main():
                 previous_time = current_time
             except OSError as e:
                 # Handle connection error
-                log(f"Error occurred while sending data: {e}", file_path="log.log")
+                log(f"Error occurred while sending data: {e}", file_path=LOG_FILE_PATH)
                 if not wlan.is_connected:
                     log("No internet connection. Trying to connect again!")
                     wifi = await wlan.connect_async(config.WIFI_SSID,config.WIFI_PASSWORD)
-                log(f"Reconnecting to mqtt_client!", file_path="log.log")
-                mqtt_client.connect(False)
+                log(f"Reconnecting to mqtt_client!", file_path=LOG_FILE_PATH)
+                try:
+                    mqtt_client.connect(False)
+                except Exception as e:
+                    log(f"Error connecting: {e}", file_path=LOG_FILE_PATH)
             except Exception as e:
-                log(f"Other error occurred while sending data: {e}", file_path="log.log")
+                log(f"Other error occurred while sending data: {e}", file_path=LOG_FILE_PATH)
 
         await asyncio.sleep(1)
 
