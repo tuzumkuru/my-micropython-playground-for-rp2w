@@ -1,7 +1,7 @@
 from machine import Pin, I2C
 
 # Define the pins for SDA and SCL
-i2c = I2C(0, sda=Pin(4), scl=Pin(5))
+i2c = I2C(0)
 
 # Scan for connected devices
 devices = i2c.scan()
