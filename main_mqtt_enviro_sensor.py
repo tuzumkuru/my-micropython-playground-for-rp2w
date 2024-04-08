@@ -4,7 +4,7 @@ import ubinascii
 import machine
 from machine import Pin, I2C
 from umqtt.simple import MQTTClient
-from bme688 import *
+from bme680i import *
 import config
 from utilities import sync_time
 import wifi
@@ -15,7 +15,7 @@ from logger import log
 # Default MQTT server to connect to
 MQTT_BROKER = config.MQTT_BROKER
 CLIENT_ID = ubinascii.hexlify(machine.unique_id()).decode('utf-8')
-MQTT_TOPIC = CLIENT_ID + '/' + "BME688"
+MQTT_TOPIC = CLIENT_ID + '/' + config.SENSOR_NAME
 
 LOG_FILE_PATH = "log.log"
 
