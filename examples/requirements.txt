@@ -1,0 +1,5 @@
+micropython-aioble
+micropython-urequests
+micropython-sgp40
+micropython-mqtt_as
+micropython-statistics

@@ -1,52 +1,46 @@
 # MicroPython Playground for Raspberry Pi Pico W
 
-This project is a collection of MicroPython examples and applications for the Raspberry Pi Pico W. It includes code for various sensors and communication protocols, with a focus on IoT and environmental sensing.
+This project contains the code for a Wi-Fi enabled environmental sensor that sends data to an MQTT broker. It is designed for a Raspberry Pi Pico W with a BME688 sensor.
 
-## Features
+The repository is structured for a production deployment, but also contains a folder with examples for learning and testing purposes.
 
-*   **Environmental Sensing:** Reads data from a BME688 sensor (temperature, humidity, pressure, gas).
-*   **Motion Sensing:** Interfaces with an MPU6050 inertial measurement unit (IMU).
-*   **Air Quality Sensing:** Reads data from an SGP40 VOC sensor.
-*   **MQTT Communication:** Sends sensor data to an MQTT broker. Includes examples for both `umqtt.simple` and `mqtt_as`.
-*   **BLE Peripheral:** An example of how to use the Raspberry Pi Pico W as a BLE peripheral.
-*   **Over-the-Air (OTA) Updates:** An example of how to perform OTA updates using MQTT.
-*   **Dependency Management:** Includes a `requirements.txt` file and a script to install the required packages using `mip`.
+## Production Deployment
 
-## Hardware
+This guide explains how to deploy the main environmental sensor application to your Raspberry Pi Pico W.
 
-*   Raspberry Pi Pico W
-*   BME688 Breakout Board
-*   MPU6050 Breakout Board
-*   SGP40 Breakout Board
+### 1. Configure Your Credentials
 
-## Setup
+Copy the `config_template.py` file to `config.py` and fill in your Wi-Fi and MQTT broker details.
 
-1.  **Clone the repository:**
-    ```bash
-    git clone <repository-url>
-    ```
+### 2. Deploy to the Device
 
-2.  **Configure your credentials:**
-    Copy the `config_template.py` file to `config.py` and fill in your Wi-Fi and MQTT broker details.
-    ```bash
-    cp config_template.py config.py
-    ```
+Copy the following files and directories to the root of your MicroPython device:
 
-3.  **Install dependencies:**
-    Upload `requirements.txt` and `install_deps.py` to your MicroPython device. Then, connect to the device's REPL and run:
-    ```python
-    import install_deps
-    ```
-    This will install all the necessary libraries.
+*   `main.py`
+*   `src/`
+*   `lib/`
+*   `config.py`
+*   `requirements.txt`
+*   `install_deps.py`
 
-## Usage
-
-The main application is `main.py`, which runs the environmental sensor and sends the data to an MQTT broker. You can run it from the REPL:
-
-```python
-import main
+You can use tools like Thonny or `mpremote` to copy the files. For example, with `mpremote`:
+```bash
+mpremote cp main.py src lib config.py requirements.txt install_deps.py /
 ```
 
-## Examples
+### 3. Install Dependencies
 
-The project includes several example files with the `ex_` prefix. These demonstrate how to use the different sensors and features individually. You can run them from the REPL to test your hardware and connections.
+Connect to the device's REPL and run the installation script:
+```python
+import install_deps
+```
+
+### 4. Run the Application
+
+The application will now run automatically every time the device boots up. You can monitor the output by connecting to the REPL.
+
+## Examples and Learning
+
+This repository also contains a number of examples in the `examples/` directory. These are not required for the main application to run.
+
+If you wish to run them, you will need to install their dependencies, which are listed in `examples/requirements.txt`. You can copy this file to your device and use the `install_deps.py` script to install them.

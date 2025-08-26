@@ -1,4 +1,2 @@
-import asyncio
-import main_mqtt_enviro_sensor
-
-asyncio.run(main_mqtt_enviro_sensor.main())
+# This file is executed on every boot (including wake-boot from deepsleep)
+import src.main
