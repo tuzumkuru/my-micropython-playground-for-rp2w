@@ -1,0 +1,7 @@
+micropython-aioble
+micropython-umqtt.simple
+micropython-urequests
+micropython-ujson
+micropython-sgp40
+micropython-mqtt_as
+micropython-statistics
