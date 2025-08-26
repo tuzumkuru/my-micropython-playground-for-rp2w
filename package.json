@@ -1,0 +1,14 @@
+{
+    "urls": [
+        ["logger.py", "github:tuzumkuru/my-micropython-playground-for-rp2w/logger.py"],
+        ["utilities.py", "github:tuzumkuru/my-micropython-playground-for-rp2w/utilities.py"],
+        ["wifi.py", "github:tuzumkuru/my-micropython-playground-for-rp2w/wifi.py"],
+        ["bme680i.py", "github:robert-hh/BME680-Micropython/bme680i.py"]
+        
+
+    ],
+    "deps": [
+        ["umqtt.simple", "latest"]
+    ],
+    "version": "0.2"
+}
