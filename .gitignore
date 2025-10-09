@@ -1,4 +1,5 @@
 /.vscode
 /lib
 config.py
-*.log/.micropico 
+*.log
+/.micropico 
