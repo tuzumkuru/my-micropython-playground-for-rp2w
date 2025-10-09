@@ -106,9 +106,13 @@ async def task_main():
                         log(f"Error disconnecting MQTT client: {ex}", file_path=LOG_FILE_PATH)
                 mqtt_client = None # Reset client to trigger reconnection
                 
-                if not wlan.is_connected:
+                if not wlan.is_connected():
                     log("No internet connection. Trying to connect again!")
-                    await wlan.connect_async(config.WIFI_SSID,config.WIFI_PASSWORD)
+                    reconnected = await wlan.connect_async(config.WIFI_SSID, config.WIFI_PASSWORD)
+                    if not reconnected:
+                        log("Reconnection attempt failed — rebooting device to retry.", file_path=LOG_FILE_PATH)
+                        await asyncio.sleep(1)
+                        machine.reset()
 
             except Exception as e:
                 log(f"Other error occurred while sending data: {e}", file_path=LOG_FILE_PATH)
@@ -121,7 +125,13 @@ async def main():
     tasks = []
     tasks.append(asyncio.create_task(task_flash_led()))
 
-    await wlan.connect_async(config.WIFI_SSID,config.WIFI_PASSWORD)
+    # Try to connect and reboot if we fail to obtain a connection.
+    connected = await wlan.connect_async(config.WIFI_SSID, config.WIFI_PASSWORD)
+    if not connected:
+        log("Wi-Fi connect attempt failed — rebooting device to retry.")
+        # small delay to flush logs
+        await asyncio.sleep(1)
+        machine.reset()
 
     sync_time()
     
