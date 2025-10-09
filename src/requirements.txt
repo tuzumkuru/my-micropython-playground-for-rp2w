@@ -1,2 +1,2 @@
-micropython-umqtt.simple
-micropython-ujson
+umqtt.simple
+github:robert-hh/BME680-Micropython/bme680i.py
