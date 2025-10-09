@@ -9,7 +9,7 @@ import wifi
 import json
 from logger import log
 import uos
-from install_deps import check_missing_packages, install_packages
+from dependency_manager import check_missing_packages, install_packages
 
 
 # Default MQTT server to connect to
@@ -144,7 +144,7 @@ async def main():
         machine.reset()
 
     sync_time()
-    
+
     # After syncing time, ensure required packages are installed only on first boot.
     try:
         if check_missing_packages is not None and install_packages is not None:

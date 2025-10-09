@@ -57,18 +57,15 @@ def install_packages(packages=None, requirements_file="requirements.txt", verbos
 def _normalize_package_name(pkg_str):
     """Turn a requirement-spec (e.g. 'micropython-umqtt.simple==1.3') into a module candidate name.
 
-    This is heuristic: many MiP packages expose a top-level module using the package name or a shortened form.
+    Heuristic used to derive an importable module name from a package spec.
     """
     if not pkg_str:
         return None
-    # remove versioning
     for sep in ("==", ">=", "<=", ">", "<", "~="):
         if sep in pkg_str:
             pkg_str = pkg_str.split(sep, 1)[0]
             break
-    # common separators
     pkg_str = pkg_str.strip()
-    # some packages use micropython- prefix, try removing it
     if pkg_str.startswith("micropython-"):
         return pkg_str[len("micropython-"):]
     return pkg_str
@@ -77,7 +74,7 @@ def _normalize_package_name(pkg_str):
 def is_package_installed(pkg_str):
     """Return True if importing a likely module for pkg_str succeeds, else False.
 
-    This is a best-effort check — not perfect for every package naming scheme.
+    Best-effort check; not perfect for every naming scheme.
     """
     mod = _normalize_package_name(pkg_str)
     if not mod:
@@ -86,7 +83,6 @@ def is_package_installed(pkg_str):
         __import__(mod)
         return True
     except Exception:
-        # try replacing - with _ (some modules use underscores)
         try:
             __import__(mod.replace('-', '_'))
             return True
@@ -118,7 +114,8 @@ def check_missing_packages(packages=None, requirements_file="requirements.txt", 
     return missing
 
 
-def _main():
+def install():
+    """Run the installer: check connectivity and install requirements."""
     print("Checking internet connectivity...")
     if has_internet():
         print("Internet reachable — installing dependencies.")
@@ -126,7 +123,3 @@ def _main():
     else:
         print("No internet connection detected. Please connect the device to the internet and run this script again.")
         sys.exit(1)
-
-
-if __name__ == "__main__":
-    _main()
