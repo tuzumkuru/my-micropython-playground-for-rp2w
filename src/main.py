@@ -3,13 +3,13 @@ import uasyncio as asyncio
 import ubinascii
 import machine
 from machine import Pin, I2C
-from umqtt.simple import MQTTClient
-from bme680i import *
 import config
 from utilities import sync_time
 import wifi
 import json
 from logger import log
+import uos
+from install_deps import check_missing_packages, install_packages
 
 
 # Default MQTT server to connect to
@@ -63,6 +63,16 @@ async def get_sensor_data(sensor):
 async def task_main():
     log("Setting up I2C and BME Sensor")
     i2c = I2C(0, sda=Pin(4), scl=Pin(5))
+    # import hardware and MQTT modules locally so missing packages don't crash module import
+    try:
+        from bme680i import BME680_I2C
+        from umqtt.simple import MQTTClient
+    except Exception as e:
+        log(f"Required modules not available: {e}. Ensure packages are installed and reboot.")
+        # give logger a moment, then reboot to try provisioning path again
+        await asyncio.sleep(1)
+        machine.reset()
+
     bme = BME680_I2C(i2c)
     
     mqtt_client = None
@@ -134,6 +144,42 @@ async def main():
         machine.reset()
 
     sync_time()
+    
+    # After syncing time, ensure required packages are installed only on first boot.
+    try:
+        if check_missing_packages is not None and install_packages is not None:
+            MARKER_PATH = "installed_once.flag"
+            first_boot = False
+            try:
+                uos.stat(MARKER_PATH)
+                first_boot = False
+            except Exception:
+                first_boot = True
+
+            if first_boot:
+                log("First boot detected: checking for missing packages")
+                missing = check_missing_packages()
+                if missing:
+                    log(f"Missing packages detected: {missing}")
+                    results = install_packages(packages=missing)
+                    for pkg, status in results.items():
+                        if status is True:
+                            log(f"Installed {pkg}")
+                        else:
+                            log(f"Failed to install {pkg}: {status}")
+                else:
+                    log("All required packages are already installed.")
+
+                # write marker so we don't attempt again
+                try:
+                    with open(MARKER_PATH, "w") as mf:
+                        mf.write("installed\n")
+                except Exception as e:
+                    log(f"Failed to write install marker: {e}")
+            else:
+                log("Install marker present; skipping package installation.")
+    except Exception as e:
+        log(f"Error while checking/installing packages: {e}")
     
     tasks.append(asyncio.create_task(task_main()))
 
